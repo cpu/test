@@ -1,0 +1,79 @@
+name: testing
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+
+
+jobs:
+  build:
+    name: Build+test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run build
+        run: cargo build
+        env:
+          RUSTFLAGS: --deny warnings
+
+  tests:
+    name: Test it
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests
+        run: cargo test
+        env:
+          RUSTFLAGS: --deny warnings
+
+  build-again:
+    name: Build+test Again
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run build
+        run: cargo build
+        env:
+          RUSTFLAGS: --deny warnings
+
+  yell:
+    name: Yell at devs
+    runs-on: ubuntu-latest
+    needs: [build, tests, build-again]
+    if: "${{ always() && contains(needs.*.result, 'failure') }}"
+    steps:
+      - name: Yell
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          curl --include --json "{\"content\": \"Yeet\"}" $DISCORD_WEBHOOK
+
+
